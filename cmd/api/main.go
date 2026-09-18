@@ -4,36 +4,55 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
+
+	"github.com/pinedadaniel/logger-go/pkg/log"
 )
 
-var ErrEmptyScope = errors.New("SCOPE environment variable is empty")
+var (
+	execCommand        = exec.Command
+	chdirCommand       = os.Chdir
+	local              = "local"
+	ErrEmptyScope      = errors.New("SCOPE environment variable is empty")
+	ErrEmptyAppCommand = errors.New("APP_COMMAND environment variable is empty")
+)
 
 func main() {
 	ctx := context.Background()
 	if err := run(ctx); err != nil {
-		log.Panic(ctx, "could not start app")
-		log.Fatalf("launcher error: %v", err)
+		log.Panic(ctx, "could not start app",
+			log.Err(err),
+		)
 	}
 }
 
 func run(ctx context.Context) error {
-	scope, err := getScope()
+	scope, app, err := env()
 	if err != nil {
 		return err
 	}
 
-
-	log.Info(ctx, "changing path to new dir",
-		log.String("scope", scope),
-	)
-
-	if err := chdirCommand(scope); err != nil {
-		return fmt.Errorf("change dir error on: %s - %w", scope, err)
+	if scope == local {
+		log.Init(true)
 	}
 
+	log.Info(ctx, "Running bootstrapper with",
+		log.String("scope", scope),
+		log.String("app", app),
+	)
+
+	targetDir := filepath.Join("cmd", app)
+
+	if errCommand := chdirCommand(targetDir); errCommand != nil {
+		return fmt.Errorf("change dir error on: %s - %w", app, errCommand)
+	}
+
+	log.Info(ctx, "changing path to new dir",
+		log.String("app", app),
+	)
 	cmd := execCommand("./app", os.Args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -49,11 +68,20 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func getScope() (string, error) {
-	value := os.Getenv("SCOPE")
-	if value == "" {
-		return "", ErrEmptyScope
+func env() (string, string, error) {
+	scope := os.Getenv("SCOPE")
+	if scope == "" {
+		return "", "", ErrEmptyScope
 	}
 
-	return strings.Split(value, "-")[0], nil
+	scope = strings.Split(scope, "-")[0]
+
+	app := os.Getenv("APP_COMMAND")
+	if app == "" {
+		return scope, "", ErrEmptyAppCommand
+	}
+
+	app = strings.Split(app, "-")[0]
+
+	return scope, app, nil
 }
