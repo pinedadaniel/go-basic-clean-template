@@ -39,6 +39,11 @@ func run(ctx context.Context) error {
 		log.Init(true)
 	}
 
+	rootDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("could not get working directory: %w", err)
+	}
+
 	log.Info(ctx, "Running bootstrapper with",
 		log.String("scope", scope),
 		log.String("app", app),
@@ -56,6 +61,11 @@ func run(ctx context.Context) error {
 	cmd := execCommand("./app", os.Args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	configPath := filepath.Join(rootDir, "internal", "config", "profile")
+	cmd.Env = append(os.Environ(), fmt.Sprintf("CONFIG_DIR=%s", configPath))
+
+	log.Info(ctx, configPath)
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("could not start app: %w", err)
@@ -76,7 +86,7 @@ func env() (string, string, error) {
 
 	scope = strings.Split(scope, "-")[0]
 
-	app := os.Getenv("APP_COMMAND")
+	app := os.Getenv("APP_COMPONENT")
 	if app == "" {
 		return scope, "", ErrEmptyAppCommand
 	}
