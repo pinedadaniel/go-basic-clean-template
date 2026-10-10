@@ -8,15 +8,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pinedadaniel/go-basic-clean-template/internal/config"
-	"github.com/pinedadaniel/go-basic-clean-template/internal/config/profile"
-	"github.com/pinedadaniel/go-basic-clean-template/internal/controller/http"
-	"github.com/pinedadaniel/go-basic-clean-template/internal/controller/http/handler"
-	"github.com/pinedadaniel/go-basic-clean-template/internal/controller/http/handler/health"
-	"github.com/pinedadaniel/go-basic-clean-template/internal/controller/http/router"
-	usecaseHealth "github.com/pinedadaniel/go-basic-clean-template/internal/core/usecase/health"
-	healthRepository "github.com/pinedadaniel/go-basic-clean-template/internal/repository/health"
 	"github.com/pinedadaniel/go-logger/pkg/log"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/internal/config"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/internal/config/profile"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/internal/controller/http"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/internal/controller/http/handler"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/internal/controller/http/handler/health"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/internal/controller/http/router"
+	usecaseHealth "github.com/pinedadaniel/go-scaffolder-clean-template/internal/core/usecase/health"
+	healthRepository "github.com/pinedadaniel/go-scaffolder-clean-template/internal/repository/health"
 )
 
 const (

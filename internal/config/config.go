@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
-	"github.com/pinedadaniel/go-basic-clean-template/pkg/env"
 	config "github.com/pinedadaniel/go-load-env/pkg/env"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/pkg/env"
 )
 
 type (

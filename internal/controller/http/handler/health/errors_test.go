@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pinedadaniel/go-basic-clean-template/internal/controller/http/handler"
-	coreHealth "github.com/pinedadaniel/go-basic-clean-template/internal/core/usecase/health"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/internal/controller/http/handler"
+	coreHealth "github.com/pinedadaniel/go-scaffolder-clean-template/internal/core/usecase/health"
 )
 
 type healthUseCaseStub struct{}

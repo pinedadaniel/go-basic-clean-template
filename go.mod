@@ -1,4 +1,4 @@
-module github.com/pinedadaniel/go-basic-clean-template
+module github.com/pinedadaniel/go-scaffolder-clean-template
 
 go 1.27.1
 

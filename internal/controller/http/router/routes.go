@@ -2,7 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/pinedadaniel/go-basic-clean-template/internal/controller/http/handler"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/internal/controller/http/handler"
 )
 
 const (

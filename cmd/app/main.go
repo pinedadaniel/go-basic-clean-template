@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"github.com/pinedadaniel/go-basic-clean-template/internal/app"
-	"github.com/pinedadaniel/go-basic-clean-template/internal/config"
-	"github.com/pinedadaniel/go-basic-clean-template/pkg/env"
 	"github.com/pinedadaniel/go-logger/pkg/log"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/internal/app"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/internal/config"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/pkg/env"
 )
 
 const (

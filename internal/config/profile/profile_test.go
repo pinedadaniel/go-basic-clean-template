@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pinedadaniel/go-basic-clean-template/pkg/env"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/pkg/env"
 )
 
 func TestNewLoadsProfileForScopeFromConfiguredDirectory(t *testing.T) {

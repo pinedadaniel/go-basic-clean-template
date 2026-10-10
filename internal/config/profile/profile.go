@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pinedadaniel/go-basic-clean-template/pkg/env"
-	"github.com/pinedadaniel/go-basic-clean-template/pkg/json"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/pkg/env"
+	"github.com/pinedadaniel/go-scaffolder-clean-template/pkg/json"
 )
 
 type OptionalConfigurations struct {
