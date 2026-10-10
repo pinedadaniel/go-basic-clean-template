@@ -19,6 +19,7 @@ func New(
 	port string,
 	readTimeout time.Duration,
 	writeTimeout time.Duration,
+	idleTimeout time.Duration,
 	shutdownTimeout time.Duration,
 ) *Server {
 	return &Server{
@@ -27,6 +28,7 @@ func New(
 			Handler:      router,
 			ReadTimeout:  readTimeout,
 			WriteTimeout: writeTimeout,
+			IdleTimeout:  idleTimeout,
 		},
 		shutdownTimeout: shutdownTimeout,
 	}

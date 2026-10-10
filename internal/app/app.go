@@ -22,6 +22,7 @@ import (
 const (
 	defaultReadTimeout     = 5 * time.Second
 	defaultWriteTimeout    = 10 * time.Second
+	defaultIdleTimeout     = 60 * time.Second
 	defaultShutdownTimeout = 10 * time.Second
 )
 
@@ -39,18 +40,23 @@ type dependencies struct {
 }
 
 func Run(cfg *config.Config) error {
-	scopeProfile, err := profile.New(profile.ReaderProfile, cfg.App.Scope)
+	scopeProfile, err := profile.New(cfg.ProfileDir, cfg.App.Scope)
 	if err != nil {
 		return err
 	}
 
 	handlers, err := buildHandlers(cfg, scopeProfile)
 
+	if err != nil {
+		return err
+	}
+
 	server := http.New(
 		router.New(handlers, cfg.App.Scope),
 		cfg.HTTP.Port,
 		defaultReadTimeout,
 		defaultWriteTimeout,
+		defaultIdleTimeout,
 		defaultShutdownTimeout,
 	)
 

@@ -5,7 +5,13 @@ import (
 
 	"github.com/pinedadaniel/go-basic-clean-template/internal/app"
 	"github.com/pinedadaniel/go-basic-clean-template/internal/config"
+	"github.com/pinedadaniel/go-basic-clean-template/pkg/env"
 	"github.com/pinedadaniel/go-logger/pkg/log"
+)
+
+const (
+	msgConfigErr = "error config load: %s"
+	msgAppErr    = "application error: %s"
 )
 
 func main() {
@@ -14,7 +20,7 @@ func main() {
 	cfg, err := config.New()
 
 	if err != nil {
-		log.Panicf("config error : %s", err)
+		Exit(msgConfigErr, err, false)
 	}
 
 	// Global Logger
@@ -30,7 +36,16 @@ func main() {
 	)
 
 	if err := app.Run(cfg); err != nil {
-		log.Errorf("application error: %s", err)
+		Exit(msgAppErr, err, cfg.App.Scope.Is(env.Local))
+	}
+}
+
+func Exit(msg string, err error, withPanic bool) {
+	if withPanic {
+		//Stack trace
+		log.Panicf(msg, err)
+	} else {
+		log.Errorf(msg, err)
 		os.Exit(1)
 	}
 }

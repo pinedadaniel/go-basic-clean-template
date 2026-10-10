@@ -78,6 +78,7 @@ func GlobalErrorHandler(err error) *CustomWebError {
 }
 
 func WriteJSONError(c *gin.Context, webErr *CustomWebError) {
+	c.Abort()
 	c.JSON(webErr.Status, Response[any]{
 		Success: false,
 		Error: &APIError{
@@ -86,5 +87,4 @@ func WriteJSONError(c *gin.Context, webErr *CustomWebError) {
 			Message: webErr.Message,
 		},
 	})
-	//c.Abort()
 }

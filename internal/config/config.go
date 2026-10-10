@@ -1,7 +1,10 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/pinedadaniel/go-basic-clean-template/pkg/env"
@@ -10,12 +13,13 @@ import (
 
 type (
 	Config struct {
-		App     App
-		HTTP    HTTP
-		Log     Log
-		Metrics Metrics
-		Swagger Swagger
-		Tracing Tracing
+		App        App
+		HTTP       HTTP
+		Log        Log
+		Metrics    Metrics
+		Swagger    Swagger
+		Tracing    Tracing
+		ProfileDir string `env:"PROFILE_DIR,required"`
 	}
 
 	// App -.
@@ -57,7 +61,7 @@ type (
 func New() (*Config, error) {
 	cfg := &Config{}
 
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
 
@@ -67,6 +71,9 @@ func New() (*Config, error) {
 
 	if isValid, err := cfg.App.Scope.IsScopeValid(); !isValid {
 		return nil, err
+	}
+	if strings.TrimSpace(cfg.ProfileDir) == "" {
+		return nil, errors.New("PROFILE_DIR is required")
 	}
 
 	return cfg, nil

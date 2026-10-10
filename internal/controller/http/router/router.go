@@ -7,11 +7,13 @@ import (
 )
 
 func New(handlers handler.Handlers, scope env.Scope) *gin.Engine {
-	router := gin.New()
-
-	if isLocal := scope.Is(env.Local); !isLocal {
-		gin.SetMode(gin.ReleaseMode)
+	ginMode := gin.ReleaseMode
+	if scope.Is(env.Local) {
+		ginMode = gin.DebugMode
 	}
+	gin.SetMode(ginMode)
+
+	router := gin.New()
 
 	router.Use(
 		gin.Logger(),

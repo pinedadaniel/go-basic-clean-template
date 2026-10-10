@@ -18,8 +18,8 @@ func (s Scope) Is(scope Scope) bool {
 }
 
 func (s Scope) IsScopeValid() (bool, error) {
-	switch s {
-	case Local, Beta, Prod:
+	switch {
+	case s.Is(Local), s.Is(Beta), s.Is(Prod):
 		return true, nil
 	default:
 		return false, fmt.Errorf("invalid scope %q: allowed values are %q, %q, or %q", s, Local, Beta, Prod)

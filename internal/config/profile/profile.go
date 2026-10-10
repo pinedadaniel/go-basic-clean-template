@@ -1,22 +1,23 @@
 package profile
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pinedadaniel/go-basic-clean-template/pkg/env"
+	"github.com/pinedadaniel/go-basic-clean-template/pkg/json"
 )
-
-type Reader func(dir string, filename string) ([]byte, error)
 
 type OptionalConfigurations struct {
 	Discriminators map[string]string `json:"discriminators,omitempty"`
 }
 
 type EndpointConfiguration struct {
+	Version                string                 `json:"version,omitempty"`
 	BaseURL                string                 `json:"base_url"`
 	Timeout                int                    `json:"timeout"`
 	CircuitBreakerRatio    float64                `json:"circuit_breaker_ratio"`
@@ -45,24 +46,19 @@ func ReaderProfile(dir string, fileName string) ([]byte, error) {
 	return bytes, nil
 }
 
-func New(reader Reader, scope env.Scope) (Profile, error) {
+func New(dir string, scope env.Scope) (Profile, error) {
 
 	if isValid, err := scope.IsScopeValid(); !isValid {
 		return Profile{}, err
 	}
 
-	dir, err := DefaultConfigProfileDir()
+	raw, err := ReaderProfile(dir, strings.ToLower(string(scope)))
 	if err != nil {
-		return Profile{}, err
-	}
-
-	raw, err := reader(dir, string(scope))
-	if err != nil {
-		return Profile{}, err
+		return Profile{}, fmt.Errorf("could not load %s profile: %w", scope, err)
 	}
 
 	var profile Profile
-	if err = json.Unmarshal(raw, &profile); err != nil {
+	if err = json.Decode(raw, &profile, true); err != nil {
 		return Profile{}, fmt.Errorf("could not unmarshal profile: %w", err)
 	}
 
@@ -73,35 +69,39 @@ func New(reader Reader, scope env.Scope) (Profile, error) {
 	return profile, nil
 }
 
-func DefaultConfigProfileDir() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("could not get working directory %w", err)
-	}
-	dir = filepath.Join(dir, "internal", "config", "profile")
-
-	return dir, nil
-}
-
 func (c *Profile) validate() error {
 	var errs []error
 
 	required := []struct {
-		name           string
-		timeout        int
-		baseUrl        string
-		circuitBreaker float64
+		name   string
+		config EndpointConfiguration
 	}{
-		{"Another_api", c.AnotherAPI.Timeout, c.AnotherAPI.BaseURL, c.AnotherAPI.CircuitBreakerRatio},
+		{name: "another_api", config: c.AnotherAPI},
 	}
 
 	for _, dep := range required {
-		if dep.baseUrl == "" {
-			errs = append(errs, fmt.Errorf("baseUrl not set for %s", dep.name))
+		if err := validateDep(dep.name, dep.config); err != nil {
+			errs = append(errs, err)
 		}
-		if dep.timeout <= 0 {
-			errs = append(errs, fmt.Errorf("timeout not set for %s", dep.name))
+	}
+
+	return errors.Join(errs...)
+}
+
+func validateDep(name string, endpoint EndpointConfiguration) error {
+	var errs []error
+
+	if strings.TrimSpace(endpoint.BaseURL) == "" {
+		errs = append(errs, fmt.Errorf("%s.base_url is required", name))
+	} else {
+		parsedURL, err := url.Parse(endpoint.BaseURL)
+		if err != nil || !parsedURL.IsAbs() || parsedURL.Hostname() == "" ||
+			(!strings.EqualFold(parsedURL.Scheme, "http") && !strings.EqualFold(parsedURL.Scheme, "https")) {
+			errs = append(errs, fmt.Errorf("%s.base_url must be an absolute HTTP or HTTPS URL", name))
 		}
+	}
+	if endpoint.Timeout <= 0 {
+		errs = append(errs, fmt.Errorf("%s.timeout must be greater than zero", name))
 	}
 
 	return errors.Join(errs...)
