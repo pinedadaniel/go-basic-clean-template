@@ -1,0 +1,17 @@
+{
+  "another_api": {
+    "base_url": "https://another_api-dev.com/api",
+    "version": "/v1",
+    "timeout": 3000,
+    "circuit_breaker_ratio": 0.5,
+    "default_headers": {
+      "X-Scope": "beta"
+    },
+    "optional_configurations": {
+      "discriminators": {
+        "mobile": "another-mobile-beta",
+        "web": "another-mobile-web"
+      }
+    }
+  }
+}

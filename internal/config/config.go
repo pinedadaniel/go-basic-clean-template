@@ -1,112 +1,73 @@
 package config
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
+
+	"github.com/joho/godotenv"
+	"github.com/pinedadaniel/go-basic-clean-template/pkg/env"
+	config "github.com/pinedadaniel/go-load-env/pkg/env"
 )
 
-const (
-	defaultConfigPath = "internal/config/profile/"
-	defaultScope      = "local"
+type (
+	Config struct {
+		App     App
+		HTTP    HTTP
+		Log     Log
+		Metrics Metrics
+		Swagger Swagger
+		Tracing Tracing
+	}
+
+	// App -.
+	App struct {
+		Name      string    `env:"APP_NAME,required"`
+		Version   string    `env:"APP_VERSION,required"`
+		Scope     env.Scope `env:"APP_SCOPE,required"`
+		Component string    `env:"APP_COMPONENT"`
+	}
+
+	// HTTP -.
+	HTTP struct {
+		Port string `env:"HTTP_PORT,required"`
+	}
+
+	// Log -.
+	Log struct {
+		Level  string `env:"LOG_LEVEL,required"`
+		Format string `env:"LOG_FORMAT,required"`
+	}
+
+	// Metrics -.
+	Metrics struct {
+		Enabled bool `env:"METRICS_ENABLED" envDefault:"false"`
+	}
+
+	// Swagger -.
+	Swagger struct {
+		Enabled bool `env:"SWAGGER_ENABLED" envDefault:"true"`
+	}
+
+	// Tracing -.
+	Tracing struct {
+		Enabled bool `env:"TRACING_ENABLED" envDefault:"false"`
+	}
 )
 
-type Reader func() ([]byte, error)
+// New returns config env.
+func New() (*Config, error) {
+	cfg := &Config{}
 
-type AppConfiguration struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-}
-type HTTPConfiguration struct {
-	Port string `json:"port"`
-}
-
-type LogConfiguration struct {
-	Level  string `json:"level"`
-	Format string `json:"format"`
-}
-
-type SwaggerConfiguration struct {
-	Enabled bool `json:"enabled"`
-}
-
-type EndpointConfiguration struct {
-	BaseURL             string  `json:"base_url"`
-	Timeout             int     `json:"timeout"`
-	CircuitBreakerRatio float64 `json:"circuit_breaker_ratio"`
-}
-
-type Configuration struct {
-	App        AppConfiguration      `json:"app"`
-	HTTP       HTTPConfiguration     `json:"http"`
-	Log        LogConfiguration      `json:"log"`
-	Swagger    SwaggerConfiguration  `json:"swagger"`
-	ExampleAPI EndpointConfiguration `json:"example_api"`
-}
-
-func FileReaderImp() ([]byte, error) {
-	configDir := os.Getenv("CONFIG_DIR")
-
-	if configDir == "" {
-		configDir = filepath.Join("internal", "config", "profile")
+	if err := godotenv.Load(); err != nil {
+		return nil, err
 	}
 
-	fileName := "configurations.json"
-	filePath := filepath.Join(configDir, fileName)
-
-	absPath, err := filepath.Abs(filePath)
-	if err == nil {
-		filePath = absPath
+	if err := config.Parse(cfg); err != nil {
+		return nil, fmt.Errorf("error parse config: %w", err)
 	}
 
-	bytes, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("could not read config file at %s: %w", filePath, err)
-	}
-
-	return bytes, nil
-}
-
-func New(reader Reader) (Configuration, error) {
-	scope := os.Getenv("SCOPE")
-	if scope == "" {
-		scope = defaultScope
-	}
-
-	raw, err := reader()
-	if err != nil {
-		return Configuration{}, fmt.Errorf("could not get configuration: %w", err)
-	}
-
-	var cfg Configuration
-	if err = json.Unmarshal(raw, &cfg); err != nil {
-		return Configuration{}, fmt.Errorf("could not unmarshal configuration: %w", err)
-	}
-
-	if err = cfg.validate(); err != nil {
-		return Configuration{}, fmt.Errorf("invalid configuration: %w", err)
+	if isValid, err := cfg.App.Scope.IsScopeValid(); !isValid {
+		return nil, err
 	}
 
 	return cfg, nil
-}
-
-func (c *Configuration) validate() error {
-	var errs []error
-
-	if c.App.Name == "" {
-		errs = append(errs, errors.New("app.name is required"))
-	}
-	if c.HTTP.Port == "" {
-		errs = append(errs, errors.New("http.port is required"))
-	}
-	if c.Log.Level == "" {
-		errs = append(errs, errors.New("log.level is required"))
-	}
-	if c.ExampleAPI.BaseURL != "" && c.ExampleAPI.Timeout <= 0 {
-		errs = append(errs, errors.New("example_api.timeout must be greater than 0 when base_url is set"))
-	}
-
-	return errors.Join(errs...)
 }

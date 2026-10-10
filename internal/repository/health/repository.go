@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/pinedadaniel/scaffolder-api-go/internal/core/domain"
+	"github.com/pinedadaniel/go-basic-clean-template/internal/core/domain"
 )
 
 type Repository struct {

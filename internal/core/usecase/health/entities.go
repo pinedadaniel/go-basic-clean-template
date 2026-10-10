@@ -1,13 +1,7 @@
 package health
 
-import "time"
+import (
+	"github.com/pinedadaniel/go-basic-clean-template/internal/core/domain"
+)
 
-type Output struct {
-	Status    string
-	Timestamp time.Time
-	Version   string
-}
-
-type Input struct {
-	Version string
-}
+type Output domain.Health

@@ -5,9 +5,7 @@ import "time"
 type Status string
 
 const (
-	StatusUP       Status = "UP"
-	StatusDOWN     Status = "DOWN"
-	StatusDEGRADED Status = "DEGRADED"
+	StatusUP Status = "UP"
 )
 
 type Health struct {

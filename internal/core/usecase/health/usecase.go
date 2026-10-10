@@ -25,7 +25,7 @@ func (uc *UseCase) Execute(ctx context.Context) (Output, error) {
 	output := Output{
 		Version:   health.Version,
 		Timestamp: health.Timestamp,
-		Status:    string(health.Status),
+		Status:    health.Status,
 	}
 
 	return output, nil

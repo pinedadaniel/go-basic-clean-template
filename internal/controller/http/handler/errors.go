@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,10 +28,6 @@ type CustomWebError struct {
 	Message string `json:"message"`
 }
 
-func (e *CustomWebError) Error() string {
-	return fmt.Sprintf("[%d] %s: %s", e.Status, e.Code, e.Message)
-}
-
 func CreateWebError(status int, code, message string) *CustomWebError {
 	return &CustomWebError{
 		Status:  status,
@@ -41,7 +36,7 @@ func CreateWebError(status int, code, message string) *CustomWebError {
 	}
 }
 
-func GlobalErrorHandler(c *gin.Context, err error) *CustomWebError {
+func GlobalErrorHandler(err error) *CustomWebError {
 
 	var webErr *CustomWebError
 
@@ -49,55 +44,44 @@ func GlobalErrorHandler(c *gin.Context, err error) *CustomWebError {
 
 	// 4xx Client Errors
 	case errors.Is(err, ErrCodeNotFound):
-		webErr = CreateWebError(http.StatusNotFound, ErrCodeNotFound.Error(), err.Error())
+		webErr = CreateWebError(http.StatusNotFound, ErrCodeNotFound.Error(), "Resource not found.")
 	case errors.Is(err, ErrCodeBadRequest):
-		webErr = CreateWebError(http.StatusBadRequest, ErrCodeBadRequest.Error(), err.Error())
+		webErr = CreateWebError(http.StatusBadRequest, ErrCodeBadRequest.Error(), "The request is invalid.")
 	case errors.Is(err, ErrCodeUnauthorized):
-		webErr = CreateWebError(http.StatusUnauthorized, ErrCodeUnauthorized.Error(), err.Error())
+		webErr = CreateWebError(http.StatusUnauthorized, ErrCodeUnauthorized.Error(), "Authentication is required.")
 	case errors.Is(err, ErrCodeForbidden):
-		webErr = CreateWebError(http.StatusForbidden, ErrCodeForbidden.Error(), err.Error())
-	case errors.Is(err, ErrCodeNotFound):
-		webErr = CreateWebError(http.StatusNotFound, ErrCodeNotFound.Error(), err.Error())
+		webErr = CreateWebError(http.StatusForbidden, ErrCodeForbidden.Error(), "You are not allowed to perform this action.")
 	case errors.Is(err, ErrCodeConflict):
-		webErr = CreateWebError(http.StatusConflict, ErrCodeConflict.Error(), err.Error())
+		webErr = CreateWebError(http.StatusConflict, ErrCodeConflict.Error(), "The request conflicts with the current resource state.")
 	case errors.Is(err, ErrCodeUnprocessableEntity):
-		webErr = CreateWebError(http.StatusUnprocessableEntity, ErrCodeUnprocessableEntity.Error(), err.Error())
+		webErr = CreateWebError(http.StatusUnprocessableEntity, ErrCodeUnprocessableEntity.Error(), "The request could not be processed.")
 	case errors.Is(err, ErrCodeTooManyRequests):
-		addRetryAfterHeader(c, err)
-		webErr = CreateWebError(http.StatusTooManyRequests, ErrCodeTooManyRequests.Error(), err.Error())
+		webErr = CreateWebError(http.StatusTooManyRequests, ErrCodeTooManyRequests.Error(), "Too many requests.")
 
 	// 5xx Server Errors
-	case errors.Is(err, ErrCodeInternalServerError):
-		webErr = CreateWebError(http.StatusBadGateway, ErrCodeInternalServerError.Error(), err.Error())
 	case errors.Is(err, ErrCodeBadGateway):
-		webErr = CreateWebError(http.StatusBadGateway, ErrCodeBadGateway.Error(), err.Error())
+		webErr = CreateWebError(http.StatusBadGateway, ErrCodeBadGateway.Error(), "A downstream service returned an invalid response.")
 	case errors.Is(err, ErrCodeServiceUnavailable):
-		addRetryAfterHeader(c, err)
-		webErr = CreateWebError(http.StatusServiceUnavailable, ErrCodeServiceUnavailable.Error(), err.Error())
+		webErr = CreateWebError(http.StatusServiceUnavailable, ErrCodeServiceUnavailable.Error(), "The service is temporarily unavailable.")
 	case errors.Is(err, ErrCodeGatewayTimeout):
-		webErr = CreateWebError(http.StatusGatewayTimeout, ErrCodeGatewayTimeout.Error(), err.Error())
+		webErr = CreateWebError(http.StatusGatewayTimeout, ErrCodeGatewayTimeout.Error(), "A downstream service timed out.")
 
 	// Circuit Breaker Errors
 	case errors.Is(err, ErrCodeCircuitBreakerOpen):
-		addRetryAfterHeader(c, err)
-		webErr = CreateWebError(http.StatusServiceUnavailable, ErrCodeCircuitBreakerOpen.Error(), err.Error())
+		webErr = CreateWebError(http.StatusServiceUnavailable, ErrCodeCircuitBreakerOpen.Error(), "The service is temporarily unavailable.")
 
 	default:
-		webErr = CreateWebError(http.StatusInternalServerError, ErrCodeInternalServerError.Error(), err.Error())
+		webErr = CreateWebError(http.StatusInternalServerError, ErrCodeInternalServerError.Error(), "An unexpected error occurred.")
 	}
 
 	return webErr
-}
-
-func addRetryAfterHeader(c *gin.Context, err error) {
-	c.Get("Retry-after")
-	c.Header("Retry-After", err.Error())
 }
 
 func WriteJSONError(c *gin.Context, webErr *CustomWebError) {
 	c.JSON(webErr.Status, Response[any]{
 		Success: false,
 		Error: &APIError{
+			Status:  webErr.Status,
 			Code:    webErr.Code,
 			Message: webErr.Message,
 		},

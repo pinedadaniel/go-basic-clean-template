@@ -7,3 +7,8 @@ type Response struct {
 	Timestamp time.Time `json:"timestamp"`
 	Version   string    `json:"version"`
 }
+
+type RequestHeaders struct {
+	XCallerId string `header:"x-Caller-id" binding:"required"`
+	XTestId   string `header:"X-Test-Id"`
+}

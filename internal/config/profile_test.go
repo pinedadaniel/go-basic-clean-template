@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/pinedadaniel/go-basic-clean-template/internal/config/profile"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +21,7 @@ func TestNew_Success(t *testing.T) {
 				"cap_provider": "accumulators",
 				"transaction_intent_api":        {"base_url": "http://example.com", "timeout": 1000, "circuit_breaker_ratio": 0.5},
 				"search_transaction_intent_api": {"base_url": "http://example.com", "timeout": 1000, "circuit_breaker_ratio": 0.5},
-				"account_balance_api":           {"base_url": "https://api.example.com", "timeout": 30, "circuit_breaker_ratio": 0.5},
+				"account_balance_api":           {"base_url": "https://app.example.com", "timeout": 30, "circuit_breaker_ratio": 0.5},
 				"accumulators_api":              {"base_url": "http://example.com", "timeout": 1000, "circuit_breaker_ratio": 0.5, "optional_configurations": {"cap_id": "CAP_ID"}},
 				"px_checkout_initializer_api":   {"base_url": "http://example.com", "timeout": 1000, "circuit_breaker_ratio": 0.5},
 				"flow_control_engine_api":       {"base_url": "http://example.com", "timeout": 1000, "circuit_breaker_ratio": 0.5},
@@ -47,7 +48,7 @@ func TestNew_Success(t *testing.T) {
 		}
 	}
 
-	config, err := New(mockReader)
+	config, err := profile.New(mockReader)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, config.AccountBalanceAPI.BaseURL)
@@ -61,7 +62,7 @@ func TestNew_ClabeValidationRulesError(t *testing.T) {
 		case configurationsFileName:
 			return []byte(`{
 				"account_balance_api": {
-					"base_url": "https://api.example.com",
+					"base_url": "https://app.example.com",
 					"timeout": 30,
 					"circuit_breaker_ratio": 0.5
 				}
@@ -73,7 +74,7 @@ func TestNew_ClabeValidationRulesError(t *testing.T) {
 		}
 	}
 
-	config, err := New(mockReader)
+	config, err := profile.New(mockReader)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "could not get clabe validation rules")
@@ -86,7 +87,7 @@ func TestNew_ClabeValidationRulesUnmarshalError(t *testing.T) {
 		case configurationsFileName:
 			return []byte(`{
 				"account_balance_api": {
-					"base_url": "https://api.example.com",
+					"base_url": "https://app.example.com",
 					"timeout": 30,
 					"circuit_breaker_ratio": 0.5
 				}
@@ -107,7 +108,7 @@ func TestNew_ClabeValidationRulesUnmarshalError(t *testing.T) {
 		}
 	}
 
-	config, err := New(mockReader)
+	config, err := profile.New(mockReader)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "could unmarshal clabe validation rules")
@@ -124,7 +125,7 @@ func TestNew_ConfigurationsError(t *testing.T) {
 		}
 	}
 
-	config, err := New(mockReader)
+	config, err := profile.New(mockReader)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "could not get configuration")
@@ -137,7 +138,7 @@ func TestNew_ConfigurationsUnmarshalError(t *testing.T) {
 		case configurationsFileName:
 			return []byte(`{
 				"account_balance_api": {
-					"base_url": "https://api.example.com",
+					"base_url": "https://app.example.com",
 					"timeout": "invalid_timeout",
 					"circuit_breaker_ratio": 0.5
 				}
@@ -147,7 +148,7 @@ func TestNew_ConfigurationsUnmarshalError(t *testing.T) {
 		}
 	}
 
-	config, err := New(mockReader)
+	config, err := profile.New(mockReader)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "could unmarshal configuration")
@@ -177,7 +178,7 @@ func validClabeRules() string {
 	return `{"rules": [{"clabe_number": "012914002006413756", "reference_required": true, "concept_required": true, "concept_length": 8}]}`
 }
 
-func makeReader(cfg, clabe string) Reader {
+func makeReader(cfg, clabe string) profile.Reader {
 	return func(name string) ([]byte, error) {
 		switch name {
 		case configurationsFileName:
@@ -257,7 +258,7 @@ func TestValidate_MissingRequiredTimeout(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := New(makeReader(tc.cfg, validClabeRules()))
+			_, err := profile.New(makeReader(tc.cfg, validClabeRules()))
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), tc.missing)
 		})
@@ -281,13 +282,13 @@ func TestOptionalConfigurations_DiscriminatorsScheduledKey(t *testing.T) {
 			"audit_api":                     {"name": "test", "timeout": 1000, "retries": 1},
 			"kvs_config":                    {"container": "c", "segment": "s", "read_timeout": 1000, "write_timeout": 1000, "ttl": 86400000}
 		}`
-		config, err := New(makeReader(cfg, validClabeRules()))
+		config, err := profile.New(makeReader(cfg, validClabeRules()))
 		assert.NoError(t, err)
 		assert.Equal(t, "onepx-mlm-schedules-omega", config.PXCheckoutInitializerAPI.OptionalConfigurations.Discriminators["mobile-scheduled"])
 	})
 
 	t.Run("mobile-scheduled key is absent when not in discriminators", func(t *testing.T) {
-		config, err := New(makeReader(validFullConfig(), validClabeRules()))
+		config, err := profile.New(makeReader(validFullConfig(), validClabeRules()))
 		assert.NoError(t, err)
 		assert.Empty(t, config.PXCheckoutInitializerAPI.OptionalConfigurations.Discriminators["mobile-scheduled"])
 	})
@@ -311,13 +312,13 @@ func TestValidate_OptionalAPIsTimeoutOnlyWhenPresent(t *testing.T) {
 			"audit_api":                     {"name": "test", "timeout": 1000, "retries": 1},
 			"kvs_config":                    {"container": "c", "segment": "s", "read_timeout": 1000, "write_timeout": 1000, "ttl": 86400000}
 		}`
-		_, err := New(makeReader(cfg, validClabeRules()))
+		_, err := profile.New(makeReader(cfg, validClabeRules()))
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "rule_engine_api")
 	})
 
 	t.Run("rule_engine_api absent passes", func(t *testing.T) {
-		_, err := New(makeReader(validFullConfig(), validClabeRules()))
+		_, err := profile.New(makeReader(validFullConfig(), validClabeRules()))
 		assert.NoError(t, err)
 	})
 
@@ -338,7 +339,7 @@ func TestValidate_OptionalAPIsTimeoutOnlyWhenPresent(t *testing.T) {
 			"kvs_config":                    {"container": "c", "segment": "s", "read_timeout": 1000, "write_timeout": 1000, "ttl": 86400000},
 			"trusted_networks_api":          {"base_url": "http://example.com", "timeout": 0, "circuit_breaker_ratio": 0.5}
 		}`
-		_, err := New(makeReader(cfg, validClabeRules()))
+		_, err := profile.New(makeReader(cfg, validClabeRules()))
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "trusted_networks_api")
 	})

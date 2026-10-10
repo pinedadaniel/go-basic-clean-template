@@ -13,3 +13,11 @@ type Response[T any] struct {
 	Data    T         `json:"data,omitempty"`
 	Error   *APIError `json:"error,omitempty"`
 }
+
+func Success[T any](data T) Response[T] {
+	return Response[T]{
+		Success: true,
+		Message: "Request Successful!",
+		Data:    data,
+	}
+}
